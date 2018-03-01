@@ -45,11 +45,9 @@ get '/' do
     colour = colouring(nil)
     result = end_game(nil)
   end
-  puts "health: #{$health} secret number: #{$secret_number}"
   if ($health == 0) || (result == "You won!")
     $secret_number = rand(101)
     $health = 5
   end
-  puts "health: #{$health} secret number: #{$secret_number}"
   erb :index, :locals => {:feedback => feedback, :colour => colour, :result => result}
 end
