@@ -1,48 +1,55 @@
 require 'sinatra'
 require 'sinatra/reloader'
 
-def start
-  @@secret_number = rand(101)
-  @@health = 5
-end
+$secret_number ||= rand(101)
+$health ||= 5
 
 def check_guess(guess)
-  return "Way too low!" if (@@secret_number - guess) > 25
-  return "Too low!" if (@@secret_number > guess)
-  return "Correct!\nThe secret number is #{@@secret_number}." if @@secret_number == guess
-  return "Too high!" if (guess - @@secret_number) < 25
+  return "" if guess.nil?
+  guess = guess.to_i
+  return "Way too low!" if ($secret_number - guess) > 25
+  return "Too low!" if ($secret_number > guess)
+  return "Correct!\nThe secret number is #{$secret_number}." if $secret_number == guess
+  return "Too high!" if (guess - $secret_number) < 25
   return "Way too high!"
 end
 
 def colouring(guess)
-  return 'green' if (@@secret_number == guess)
-  return 'red' if (@@secret_number - guess).abs > 25
-  return 'pink' if (@@secret_number - guess).abs < 25
+  return "white" if guess.nil?
+  guess = guess.to_i
+  return 'green' if ($secret_number == guess)
+  return 'red' if ($secret_number - guess).abs > 25
+  return 'pink' if ($secret_number - guess).abs < 25
 end
 
 def end_game(guess)
-  if @@secret_number == guess
-    start
+  return if guess.nil?
+  guess = guess.to_i
+  if $secret_number == guess
     return "You won!"
   end
+  $health -= 1
   message = ""
-  if (@@health == 1)
-    message = "You used all your guesses.\nThe secret number was #{@@secret_number}."
-    start
-  else
-    @@health -= 1
+  if ($health == 0)
+    message = "You used all your guesses.\nThe secret number was #{$secret_number}."
   end
-  message
 end
 
 get '/' do
+  guess = params["guess"]
+  feedback = check_guess(guess)
+  colour = colouring(guess)
+  result = end_game(guess)
   if params["cheat"] == "true"
-    message = "The secret number is #{@@secret_number}"
-  else
-    guess = params["guess"].to_i
-    message = check_guess(guess)
-    colour = colouring(guess)
-    result = end_game(guess)
+    feedback = "The secret number is #{$secret_number}"
+    colour = colouring(nil)
+    result = end_game(nil)
   end
-  erb :index, :locals => {:message => message, :colour => colour, :result => result}
+  puts "health: #{$health} secret number: #{$secret_number}"
+  if ($health == 0)
+    $secret_number = rand(101)
+    $health = 5
+  end
+  puts "Last, health: #{$health} secret number: #{$secret_number}"
+  erb :index, :locals => {:feedback => feedback, :colour => colour, :result => result}
 end
